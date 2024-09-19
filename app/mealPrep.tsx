@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { View, ScrollView, Text, TextInput, ActivityIndicator, StyleSheet, TouchableOpacity, SafeAreaView, Image, Dimensions } from 'react-native';
-import { Chip } from 'react-native-paper';
-import Carousel from 'react-native-snap-carousel';
+import { View, ScrollView, Text, ActivityIndicator, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+import Markdown from 'react-native-markdown-display';
+import MetabolismCarousel from '@/components/MetabolismCarousel'; 
+import ChipGroup from '@/components/ChipGroup'; 
+import CustomTextInput from '@/components/CustomTextInput'; 
 
 const MealPrep = () => {
   const API_KEY = '';
@@ -26,8 +28,6 @@ const MealPrep = () => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-
 
   const metabolisms = [
     { type: 'Endomorph', image: require('../assets/images/endo.png') },
@@ -61,119 +61,66 @@ const MealPrep = () => {
     fetchGeminiText(prompt);
   };
 
-  const renderMetabolismItem = ({ item }) => (
-    <TouchableOpacity onPress={() => setMetabolism(item.type)}>
-      <View style={[styles.carouselItem, metabolism === item.type && styles.carouselItemSelected]}>
-        <Image source={item.image} style={styles.carouselImage} />
-        <Text style={styles.carouselText}>{item.type}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
-        <TouchableOpacity style={{padding: 15}} onPress={navigation.goBack}>
-        <Ionicons name='arrow-back-circle-outline' color={"white"} size={30}/>
-        </TouchableOpacity>
+      <TouchableOpacity style={{ padding: 15 }} onPress={navigation.goBack}>
+        <Ionicons name='arrow-back-circle-outline' color={"white"} size={30} />
+      </TouchableOpacity>
       <ScrollView style={{ padding: 20 }}>
-        <Text style={styles.title}>Metabolism</Text>
-        <Carousel
-          ref={carouselRef}
-          data={metabolisms}
-          renderItem={renderMetabolismItem}
+        <MetabolismCarousel
+          metabolisms={metabolisms}
+          metabolism={metabolism}
+          setMetabolism={setMetabolism}
           sliderWidth={sliderWidth}
           itemWidth={itemWidth}
-          inactiveSlideOpacity={0.7}
-          inactiveSlideScale={0.9}
-          activeSlideAlignment="center"
-          containerCustomStyle={styles.carouselContainer}
         />
-        <Text style={styles.title}>Goal</Text>
-        <View style={styles.chipContainer}>
-          {['Cutting', 'Bulking', 'Maintain weight'].map(type => (
-            <Chip
-              key={type}
-              selected={goal === type}
-              onPress={() => setGoal(type)}
-              style={[styles.chip, goal === type && styles.chipSelected]}
-              textStyle={styles.chipText}
-            >
-              {type}
-            </Chip>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Height (cm)</Text>
-        <TextInput
+        <ChipGroup
+          title="Goal"
+          options={['Cutting', 'Bulking', 'Maintain weight']}
+          selectedOption={goal}
+          setSelectedOption={setGoal}
+        />
+        <CustomTextInput
+          label="Height (cm)"
           value={height}
-          onChangeText={setHeight}
-          keyboardType="numeric"
+          setValue={setHeight}
           placeholder="Height (cm)"
-          placeholderTextColor="#999"
-          style={styles.input}
+          keyboardType="numeric"
         />
-
-        <Text style={styles.label}>Age</Text>
-        <TextInput
+        <CustomTextInput
+          label="Age"
           value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
+          setValue={setAge}
           placeholder="Age"
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Current Weight (kg)</Text>
-        <TextInput
-          value={weight}
-          onChangeText={setWeight}
           keyboardType="numeric"
-          placeholder="Current Weight (kg)"
-          placeholderTextColor="#999"
-          style={styles.input}
         />
-
-        <Text style={styles.title}>Gender</Text>
-        <View style={styles.chipContainer}>
-          {['Male', 'Female'].map(type => (
-            <Chip
-              key={type}
-              selected={gender === type}
-              onPress={() => setGender(type)}
-              style={[styles.chip, gender === type && styles.chipSelected]}
-              textStyle={styles.chipText}
-            >
-              {type}
-            </Chip>
-          ))}
-        </View>
-
-        <Text style={styles.title}>Language</Text>
-        <View style={styles.chipContainer}>
-          {['English', 'French', 'German'].map(lang => (
-            <Chip
-              key={lang}
-              selected={language === lang}
-              onPress={() => setLanguage(lang)}
-              style={[styles.chip, language === lang && styles.chipSelected]}
-              textStyle={styles.chipText}
-            >
-              {lang}
-            </Chip>
-          ))}
-        </View>
-
+        <CustomTextInput
+          label="Current Weight (kg)"
+          value={weight}
+          setValue={setWeight}
+          placeholder="Current Weight (kg)"
+          keyboardType="numeric"
+        />
+        <ChipGroup
+          title="Gender"
+          options={['Male', 'Female']}
+          selectedOption={gender}
+          setSelectedOption={setGender}
+        />
+        <ChipGroup
+          title="Language"
+          options={['English', 'French', 'German']}
+          selectedOption={language}
+          setSelectedOption={setLanguage}
+        />
         <TouchableOpacity style={styles.button} onPress={handleGenerateMealPlan}>
           <Text style={styles.buttonText}>Generate Meal Plan</Text>
         </TouchableOpacity>
-
         {loading && <ActivityIndicator size="large" color="#6200ee" style={styles.loading} />}
         {error && <Text style={styles.error}>{error.message}</Text>}
-
         {text && (
-          <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>Generated Meal Plan:</Text>
-            <Text style={styles.resultText}>{text}</Text>
+          <View style={styles.markdownContainer}>
+            <Markdown>{text}</Markdown>
           </View>
         )}
       </ScrollView>
@@ -183,96 +130,32 @@ const MealPrep = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#121212',
     flex: 1,
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 18,
-    marginVertical: 8,
-  },
-  carouselContainer: {
-    marginVertical: 15,
-  },
-  label: {
-    color: '#ffffff',
-    fontSize: 16,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginVertical: 8,
-  },
-  chip: {
-    margin: 4,
-    backgroundColor: '#333',
-  },
-  chipSelected: {
-    backgroundColor: '#4b91e2',
-  },
-  chipText: {
-    color: '#fff',
+    backgroundColor: '#1E1E1E',
   },
   button: {
-    backgroundColor: "#4b91e2",
-    paddingVertical: 15,
+    backgroundColor: '#4b91e2',
+    padding: 16,
     borderRadius: 8,
-    marginBottom: 30,
-    alignItems: "center",
+    alignItems: 'center',
+    marginVertical: 20,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  input: {
-    backgroundColor: '#333',
-    color: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginVertical: 8,
-    borderRadius: 8,
+    fontSize: 18,
   },
   loading: {
-    marginVertical: 16,
+    marginVertical: 20,
   },
   error: {
     color: 'red',
-    marginVertical: 16,
+    marginVertical: 20,
   },
-  resultContainer: {
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  resultText: {
-    color: '#ffffff',
-  },
-  carouselItem: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#333',
-    alignItems: 'center',
-    padding: 16,
-  },
-  carouselItemSelected: {
-    borderWidth: 2,
-    borderColor: '#4b91e2',
-  },
-  carouselImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 8,
-  },
-  carouselText: {
-    color: '#fff',
-    marginTop: 8,
-    fontSize: 18,
+  markdownContainer: {
+    backgroundColor:"white",
+    padding:15,
+    borderRadius:15,
+    marginVertical: 20,
   },
 });
 
